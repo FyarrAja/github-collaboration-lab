@@ -55,6 +55,15 @@ class DuplicateFinderTests(unittest.TestCase):
             (root / "large-b").write_bytes(b"large content")
             self.assertEqual(find_duplicates(root, min_size=2), [["large-a", "large-b"]])
 
+    def test_min_size_includes_exact_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "exact-a").write_bytes(b"abc")
+            (root / "exact-b").write_bytes(b"abc")
+            (root / "smaller-a").write_bytes(b"ab")
+            (root / "smaller-b").write_bytes(b"ab")
+            self.assertEqual(find_duplicates(root, min_size=3), [["exact-a", "exact-b"]])
+
     def test_negative_min_size_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaisesRegex(ValueError, "negative"):
