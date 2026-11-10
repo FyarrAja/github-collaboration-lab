@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "github-collaboration-lab"
+version = "0.1.0"
+description = "Dependency-free CLI for finding duplicate files"
+requires-python = ">=3.10"
+
+[project.scripts]
+dupscan = "collab_lab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
