@@ -10,9 +10,14 @@ Requires Python 3.10+.
 python -m pip install -e .
 dupscan /path/to/folder
 dupscan /path/to/folder --json
+dupscan /path/to/folder --min-size 1048576
 ```
 
 Without installation: `PYTHONPATH=src python -m collab_lab.cli .`
+
+### Minimum file size filter
+
+Use `--min-size BYTES` to skip files smaller than the specified byte count before hashing. For example, `--min-size 1048576` considers files of at least 1 MiB. A file exactly equal to the threshold is included. Negative sizes are rejected. This option works with `--json` as well.
 
 ## Tests
 
