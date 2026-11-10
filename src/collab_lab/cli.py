@@ -16,15 +16,19 @@ def digest(path: Path, chunk_size: int = 1024 * 1024) -> str:
     return hasher.hexdigest()
 
 
-def find_duplicates(root: Path) -> list[list[str]]:
-    """Return deterministically sorted groups of files with identical contents."""
+def find_duplicates(root: Path, min_size: int = 0) -> list[list[str]]:
+    """Return sorted duplicate groups, optionally excluding files below min_size bytes."""
     if not root.is_dir():
         raise NotADirectoryError(f"Not a directory: {root}")
+    if min_size < 0:
+        raise ValueError("Minimum size cannot be negative")
     sizes: dict[int, list[Path]] = defaultdict(list)
     for path in root.rglob("*"):
         if path.is_file() and not path.is_symlink():
             try:
-                sizes[path.stat().st_size].append(path)
+                size = path.stat().st_size
+                if size >= min_size:
+                    sizes[size].append(path)
             except OSError:
                 continue
     groups: list[list[str]] = []
@@ -45,9 +49,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Find duplicate files by SHA-256")
     parser.add_argument("directory", type=Path, help="Directory to scan recursively")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON")
+    parser.add_argument("--min-size", type=int, default=0, metavar="BYTES",
+                        help="Ignore files smaller than BYTES (default: 0)")
     args = parser.parse_args(argv)
     try:
-        duplicates = find_duplicates(args.directory)
+        duplicates = find_duplicates(args.directory, min_size=args.min_size)
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     if args.json:

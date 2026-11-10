@@ -46,6 +46,39 @@ class DuplicateFinderTests(unittest.TestCase):
             file.write_bytes(b"")
             self.assertEqual(digest(file), "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
 
+    def test_min_size_filters_duplicate_groups(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "small-a").write_bytes(b"x")
+            (root / "small-b").write_bytes(b"x")
+            (root / "large-a").write_bytes(b"large content")
+            (root / "large-b").write_bytes(b"large content")
+            self.assertEqual(find_duplicates(root, min_size=2), [["large-a", "large-b"]])
+
+    def test_min_size_includes_exact_boundary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "exact-a").write_bytes(b"abc")
+            (root / "exact-b").write_bytes(b"abc")
+            (root / "smaller-a").write_bytes(b"ab")
+            (root / "smaller-b").write_bytes(b"ab")
+            self.assertEqual(find_duplicates(root, min_size=3), [["exact-a", "exact-b"]])
+
+    def test_negative_min_size_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, "negative"):
+                find_duplicates(Path(directory), min_size=-1)
+
+    def test_cli_min_size_json_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a").write_bytes(b"abc")
+            (root / "b").write_bytes(b"abc")
+            output = StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main([directory, "--min-size", "4", "--json"]), 0)
+            self.assertEqual(json.loads(output.getvalue()), {"duplicate_groups": []})
+
 
 if __name__ == "__main__":
     unittest.main()
